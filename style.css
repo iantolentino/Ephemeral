@@ -1,108 +1,975 @@
-/* Add these to your existing CSS */
-
-.connection-container {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    width: 100%;
-    max-width: 500px;
+/* Modern CSS Reset and Variables */
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #8b5cf6;
+    --secondary: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --background: #0f172a;
+    --surface: #1e293b;
+    --surface-light: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --glass: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
 }
 
-.connection-section {
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #eee;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--background);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Animated Background */
+.animated-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.bg-shape {
+    position: absolute;
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--primary), var(--primary-light));
+    opacity: 0.1;
+    animation: float 20s infinite linear;
+}
+
+.shape-1 {
+    width: 300px;
+    height: 300px;
+    top: -150px;
+    left: -150px;
+    animation-delay: 0s;
+}
+
+.shape-2 {
+    width: 200px;
+    height: 200px;
+    bottom: -100px;
+    right: 10%;
+    animation-delay: -5s;
+    animation-duration: 25s;
+}
+
+.shape-3 {
+    width: 150px;
+    height: 150px;
+    top: 20%;
+    right: -75px;
+    animation-delay: -10s;
+    animation-duration: 30s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    25% {
+        transform: translate(50px, 50px) rotate(90deg);
+    }
+    50% {
+        transform: translate(0, 100px) rotate(180deg);
+    }
+    75% {
+        transform: translate(-50px, 50px) rotate(270deg);
+    }
+}
+
+/* Glassmorphism Effect */
+.glassmorphism {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+/* Page Management */
+.page {
+    display: none;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.page.active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Login Page Styles */
+.login-container {
+    width: 100%;
+    max-width: 440px;
+    padding: 40px;
+    animation: slideUp 0.6s ease-out;
+}
+
+.logo-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.logo i {
+    color: var(--primary);
+    font-size: 2.2rem;
+}
+
+.tagline {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.form-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.form-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Input Groups */
+.input-group {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    z-index: 2;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+}
+
+/* Buttons */
+.login-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+.btn-loader {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.loader {
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Demo Accounts */
+.demo-accounts {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+}
+
+.demo-accounts h4 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.account-cards {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.account-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-align: center;
+    flex: 1;
+}
+
+.account-user {
+    display: block;
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.account-pass {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Connection Page Styles */
+.connection-container {
+    width: 100%;
+    max-width: 900px;
+    padding: 40px;
+    animation: slideUp 0.6s ease-out;
+}
+
+.connection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+}
+
+.user-welcome {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.user-welcome h2 {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+}
+
+.user-welcome p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Connection Cards */
+.connection-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.connection-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 32px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.connection-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+}
+
+.card-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 20px;
+}
+
+.connection-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+}
+
+.connection-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+}
+
+/* ID Section */
+.id-section {
+    margin-top: 20px;
 }
 
 .id-display {
-    background: #f8f9fa;
-    padding: 1rem;
-    border: 2px dashed #667eea;
-    border-radius: 5px;
-    font-family: monospace;
-    font-size: 1.1rem;
-    margin: 1rem 0;
-    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px dashed var(--primary);
+    margin-bottom: 16px;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.9rem;
     word-break: break-all;
 }
 
-.btn-primary {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 5px;
+.id-text {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    color: var(--primary);
+    font-size: 0.9rem;
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Join Section */
+.join-section {
+    margin-top: 20px;
+}
+
+.input-with-btn {
+    display: flex;
+    gap: 8px;
+}
+
+.input-with-btn input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.input-with-btn input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.connect-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--primary);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.connect-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+/* Status Section */
+.status-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 24px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--danger);
+    transition: all 0.3s ease;
+}
+
+.status-dot.connected {
+    background: var(--secondary);
+    box-shadow: 0 0 10px var(--secondary);
+}
+
+.status-dot.connecting {
+    background: var(--warning);
+    animation: pulse 2s infinite;
+}
+
+.status-info {
+    display: flex;
+    gap: 8px;
+}
+
+.status-label {
+    color: var(--text-secondary);
+}
+
+.status-text {
+    font-weight: 600;
+}
+
+.connected-peer {
+    color: var(--secondary);
+    font-weight: 600;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Primary Button */
+.primary-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border: none;
+    border-radius: 12px;
+    color: white;
     font-size: 1rem;
-    transition: background 0.3s;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.btn-primary:hover:not(:disabled) {
-    background: #5a6fd8;
+.primary-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
 }
 
-.btn-primary:disabled {
-    background: #ccc;
+.primary-btn:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
+    transform: none !important;
 }
 
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 5px;
+.primary-btn.large {
+    padding: 20px;
+    font-size: 1.1rem;
+}
+
+/* Icon Buttons */
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.3s;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.btn-secondary:hover {
-    background: #5a6268;
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: var(--primary);
 }
 
-.btn-warning {
-    background: #ffc107;
-    color: #212529;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
+.icon-btn.warning:hover {
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
-.btn-warning:hover {
-    background: #e0a800;
+/* Chat Page Styles */
+.chat-container {
+    width: 100%;
+    max-width: 1000px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.6s ease-out;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.chat-info {
+    display: flex;
+    align-items: center;
+    gap: 24px;
 }
 
 .connection-status {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 5px;
-    margin: 1rem 0;
-}
-
-#status.connected {
-    color: #28a745;
-    font-weight: bold;
-}
-
-#status.connecting {
-    color: #ffc107;
-    font-weight: bold;
-}
-
-#status.disconnected {
-    color: #dc3545;
-    font-weight: bold;
-}
-
-.connection-section .input-group {
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
 }
 
-.connection-section .input-group input {
+.online-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--secondary);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.chat-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Chat Messages */
+.chat-messages-container {
     flex: 1;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.chat-messages {
+    height: 100%;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+.welcome-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.welcome-icon {
+    font-size: 3rem;
+    color: var(--primary);
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.welcome-message h3 {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+/* Message Styles */
+.message {
+    margin-bottom: 16px;
+    padding: 16px 20px;
+    border-radius: 18px;
+    max-width: 70%;
+    position: relative;
+    animation: messageSlide 0.3s ease-out;
+}
+
+.message.own {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 6px;
+}
+
+.message.other {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    margin-right: auto;
+    border-bottom-left-radius: 6px;
+}
+
+.message.system {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    max-width: 100%;
+    text-align: center;
+    color: var(--warning);
+    font-style: italic;
+}
+
+.message-header {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.message-text {
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+@keyframes messageSlide {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Chat Input */
+.chat-input-container {
+    padding: 20px;
+}
+
+.chat-input {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.emoji-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+#message-input {
+    flex: 1;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+#message-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.send-btn {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.send-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+}
+
+.chat-features {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.encryption-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Notification System */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-icon {
+    font-size: 1.2rem;
+}
+
+.notification.success .notification-icon {
+    color: var(--secondary);
+}
+
+.notification.error .notification-icon {
+    color: var(--danger);
+}
+
+.notification.warning .notification-icon {
+    color: var(--warning);
+}
+
+/* Error Message */
+.error-message {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-top: 16px;
+    color: var(--danger);
+    font-size: 0.9rem;
+}
+
+.error-message.show {
+    display: flex;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page {
+        padding: 10px;
+    }
+    
+    .login-container,
+    .connection-container {
+        padding: 24px;
+    }
+    
+    .connection-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .connection-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .user-welcome {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .chat-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .chat-info {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .message {
+        max-width: 85%;
+    }
+    
+    .account-cards {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container,
+    .connection-container {
+        padding: 20px;
+    }
+    
+    .connection-card {
+        padding: 20px;
+    }
+    
+    .message {
+        max-width: 95%;
+    }
 }
