@@ -3,80 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Admin Chat</title>
+    <title>Emepheral Chat | Secure P2P Messaging</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app">
+        <!-- Animated Background -->
+        <div class="animated-bg">
+            <div class="bg-shape shape-1"></div>
+            <div class="bg-shape shape-2"></div>
+            <div class="bg-shape shape-3"></div>
+        </div>
+
         <!-- Login Page -->
         <div id="login-page" class="page active">
-            <div class="login-container">
-                <h2>P2P Admin Login</h2>
-                <form id="login-form">
-                    <div class="input-group">
-                        <label for="username">Username:</label>
-                        <input type="text" id="username" name="username" required>
+            <div class="login-container glassmorphism">
+                <div class="logo-section">
+                    <div class="logo">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Emepheral Chat</span>
                     </div>
-                    <div class="input-group">
-                        <label for="password">Password:</label>
-                        <input type="password" id="password" name="password" required>
+                    <p class="tagline">Secure Peer-to-Peer Messaging</p>
+                </div>
+                
+                <form id="login-form" class="login-form">
+                    <div class="form-header">
+                        <h2>Hello User</h2>
+                        <p>Sign in to your account</p>
                     </div>
-                    <button type="submit" class="login-btn">Login</button>
+                    
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <input type="text" id="username" name="username" placeholder="Username" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" id="password" name="password" placeholder="Password" required>
+                        <button type="button" class="password-toggle" id="password-toggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <button type="submit" class="login-btn">
+                        <span class="btn-text">Sign In</span>
+                        <div class="btn-loader">
+                            <div class="loader"></div>
+                        </div>
+                    </button>
                 </form>
-                <div id="login-error" class="error-message"></div>
+                
+                <div id="login-error" class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span class="error-text"></span>
+                </div>
+
+                <!-- <div class="demo-accounts">
+                    <h4>Demo Accounts</h4>
+                    <div class="account-cards">
+                        <div class="account-card">
+                            <span class="account-user">admin1</span>
+                            <span class="account-pass">root1</span>
+                        </div>
+                        <div class="account-card">
+                            <span class="account-user">admin2</span>
+                            <span class="account-pass">root2</span>
+                        </div>
+                    </div>
+                </div> -->
             </div>
         </div>
 
         <!-- Connection Page -->
         <div id="connection-page" class="page">
-            <div class="connection-container">
-                <h2>Welcome, <span id="welcome-user"></span>!</h2>
-                
-                <div class="connection-section">
-                    <h3>Create Connection</h3>
-                    <p>Share this ID with others to connect:</p>
-                    <div class="id-display" id="my-id"></div>
-                    <button id="copy-id" class="btn-secondary">Copy My ID</button>
+            <div class="connection-container glassmorphism">
+                <div class="connection-header">
+                    <div class="user-welcome">
+                        <div class="avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h2>Hello, <span id="welcome-user"></span>!</h2>
+                            <p>Ready to connect securely</p>
+                        </div>
+                    </div>
+                    <button id="logout-from-connect" class="icon-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
 
-                <div class="connection-section">
-                    <h3>Join Connection</h3>
-                    <div class="input-group">
-                        <input type="text" id="peer-id" placeholder="Enter friend's connection ID">
-                        <button id="connect-btn" class="btn-primary">Connect</button>
+                <div class="connection-cards">
+                    <div class="connection-card">
+                        <div class="card-icon">
+                            <i class="fas fa-share-alt"></i>
+                        </div>
+                        <h3>Create Connection</h3>
+                        <p>Share your unique ID to start a secure chat</p>
+                        <div class="id-section">
+                            <div class="id-display" id="my-id">
+                                <span class="id-text">Generating...</span>
+                            </div>
+                            <button id="copy-id" class="action-btn">
+                                <i class="fas fa-copy"></i>
+                                Copy ID
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="connection-card">
+                        <div class="card-icon">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <h3>Join Connection</h3>
+                        <p>Connect to another user using their ID</p>
+                        <div class="join-section">
+                            <div class="input-with-btn">
+                                <input type="text" id="peer-id" placeholder="Enter connection ID">
+                                <button id="connect-btn" class="connect-btn">
+                                    <i class="fas fa-plug"></i>
+                                    Connect
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="connection-status">
-                    <h4>Status: <span id="status">Disconnected</span></h4>
-                    <div id="connected-peer"></div>
+                <div class="status-section">
+                    <div class="status-indicator">
+                        <div class="status-dot" id="status-dot"></div>
+                        <div class="status-info">
+                            <span class="status-label">Status:</span>
+                            <span id="status" class="status-text">Disconnected</span>
+                        </div>
+                    </div>
+                    <div id="connected-peer" class="connected-peer"></div>
                 </div>
 
-                <button id="go-to-chat" class="btn-primary" disabled>Enter Chat</button>
-                <button id="logout-from-connect" class="logout-btn">Logout</button>
+                <button id="go-to-chat" class="primary-btn large" disabled>
+                    <i class="fas fa-comments"></i>
+                    Enter Chat Room
+                </button>
             </div>
         </div>
 
         <!-- Chat Page -->
         <div id="chat-page" class="page">
             <div class="chat-container">
-                <div class="chat-header">
-                    <h3>P2P Chat - Connected to: <span id="connected-to"></span></h3>
-                    <div class="user-info">
-                        <span id="current-user"></span>
-                        <button id="disconnect-btn" class="btn-warning">Disconnect</button>
-                        <button id="logout-btn" class="logout-btn">Logout</button>
+                <div class="chat-header glassmorphism">
+                    <div class="chat-info">
+                        <div class="connection-status">
+                            <div class="online-dot"></div>
+                            <span>Connected to: <strong id="connected-to">Unknown</strong></span>
+                        </div>
+                        <div class="user-badge">
+                            <i class="fas fa-user"></i>
+                            <span id="current-user">Admin</span>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button id="disconnect-btn" class="icon-btn warning" title="Disconnect">
+                            <i class="fas fa-unlink"></i>
+                        </button>
+                        <button id="logout-btn" class="icon-btn" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div class="chat-messages" id="chat-messages">
-                    <!-- Messages will appear here -->
+                <div class="chat-messages-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="welcome-message">
+                            <div class="welcome-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3>Secure P2P Chat Started</h3>
+                            <p>Your messages are encrypted end-to-end</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="chat-input">
-                    <input type="text" id="message-input" placeholder="Type your message...">
-                    <button id="send-btn">Send</button>
+                <div class="chat-input-container glassmorphism">
+                    <div class="chat-input">
+                        <button class="emoji-btn" id="emoji-btn">
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        <input type="text" id="message-input" placeholder="Type your secure message...">
+                        <button id="send-btn" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="chat-features">
+                        <span class="encryption-notice">
+                            <i class="fas fa-lock"></i>
+                            End-to-end encrypted
+                        </span>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Notification System -->
+        <div id="notification" class="notification">
+            <div class="notification-content">
+                <i class="notification-icon"></i>
+                <span class="notification-text"></span>
             </div>
         </div>
     </div>
