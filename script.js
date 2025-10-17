@@ -783,7 +783,7 @@ const additionalStyles = `
     
     .message.system .message-time {
         text-align: center;
-    }
+    } 
 `;
 
 // Inject additional styles
