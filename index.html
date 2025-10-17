@@ -1,289 +1,88 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ephemeral P2P Chat — Friendly UI</title>
-  <style>
-    :root{
-      --bg:#f4f7fb;
-      --card:#ffffff;
-      --muted:#8795a1;
-      --accent:#4b8ef7;
-      --success:#22c55e;
-      --danger:#ef4444;
-      --bubble-sent:#daf1ff;
-      --bubble-recv:#ffffff;
-      --max-width:900px;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-    html,body{height:100%; margin:0; background:var(--bg); color:#0f172a}
-    .wrap{max-width:var(--max-width); margin:18px auto; background:transparent}
-    .card{background:var(--card); border-radius:12px; box-shadow:0 6px 18px rgba(12,20,30,0.06); overflow:hidden}
-
-    header{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #eef2f7}
-    .title{display:flex; align-items:center; gap:12px}
-    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7cc3ff);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
-    h1{font-size:16px;margin:0}
-    .sub{font-size:12px;color:var(--muted)}
-
-    .status{display:flex;align-items:center;gap:8px}
-    .dot{width:10px;height:10px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,0.08)}
-    .status-text{font-size:13px;color:var(--muted)}
-
-    .main{display:flex; gap:0}
-    /* left: chat area */
-    .chat-area{flex:1; display:flex; flex-direction:column; min-height:420px}
-    .messages{flex:1; padding:18px; overflow:auto; background:linear-gradient(180deg, rgba(250,252,255,0.8), transparent)}
-
-    .msg{display:flex; gap:10px; margin-bottom:12px; align-items:flex-end}
-    .msg .bubble{max-width:72%; padding:10px 12px; border-radius:14px; font-size:14px; line-height:1.3; box-shadow:0 2px 6px rgba(12,20,30,0.03)}
-    .msg.me{flex-direction:row-reverse}
-    .msg.me .bubble{background:var(--bubble-sent); border-bottom-right-radius:4px}
-    .msg.peer .bubble{background:var(--bubble-recv)}
-    .avatar{width:36px;height:36px;border-radius:10px;background:#e6eefc;color:#11406a;display:flex;align-items:center;justify-content:center;font-weight:700}
-    .meta{font-size:11px;color:var(--muted);margin-top:6px}
-
-    .input-area{display:flex;padding:12px;border-top:1px solid #eef2f7;gap:8px;align-items:center}
-    .input-area input[type=text]{flex:1;padding:10px 12px;border-radius:10px;border:1px solid #e6eefc;outline:none;font-size:14px}
-    .input-area button{padding:9px 14px;background:var(--accent);border:none;color:white;border-radius:10px;font-weight:600;cursor:pointer}
-    .input-area button.secondary{background:transparent;color:var(--accent);border:1px solid rgba(75,142,247,0.14)}
-
-    /* right: controls */
-    .controls{width:320px;border-left:1px solid #f1f5f9;padding:16px;box-sizing:border-box}
-    .controls h3{margin:0 0 8px 0;font-size:13px}
-    .controls .btn{display:inline-block;padding:8px 10px;border-radius:8px;border:none;background:#0f172a;color:white;margin:6px 6px 6px 0;cursor:pointer;font-size:13px}
-    .controls .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(75,142,247,0.12)}
-    .field{margin:10px 0}
-    .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-    .field textarea{width:100%;height:100px;border-radius:8px;border:1px solid #eef2f7;padding:8px;font-family:monospace;font-size:12px}
-    .small{font-size:12px;color:var(--muted)}
-
-    .controls .row{display:flex;gap:8px;flex-wrap:wrap}
-    .controls .copy{background:linear-gradient(90deg,var(--accent),#7cc3ff);}
-
-    /* modal */
-    .modal{position:fixed;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;background:rgba(8,15,25,0.45)}
-    .modal .panel{width:92%;max-width:720px;background:white;border-radius:10px;padding:14px}
-    .modal.active{display:flex}
-
-    footer.note{padding:10px 18px;color:var(--muted);font-size:12px;text-align:center}
-
-    @media (max-width:880px){
-      .controls{display:none}
-      .wrap{margin:10px}
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Admin Chat</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <header>
-        <div class="title">
-          <div class="logo">P2</div>
-          <div>
-            <h1>Ephemeral P2P Chat</h1>
-            <div class="sub">Peer-to-peer WebRTC chat — messages live only in browser memory</div>
-          </div>
-        </div>
-        <div class="status" aria-live="polite">
-          <div id="statusDot" class="dot"></div>
-          <div class="status-text"><span id="statusText">Not connected</span></div>
-        </div>
-      </header>
-
-      <div class="main">
-        <div class="chat-area">
-          <div class="messages" id="messages" role="log" aria-live="polite"></div>
-
-          <div class="input-area">
-            <input id="msg" type="text" placeholder="Type a message and press Enter or Send..." autocomplete="off" />
-            <button id="send">Send</button>
-            <button id="emoji" class="secondary">🙂</button>
-          </div>
-        </div>
-
-        <aside class="controls" aria-hidden="false">
-          <h3>Connection</h3>
-          <div class="row">
-            <button id="createOffer" class="btn">Create Offer</button>
-            <button id="createAnswer" class="btn ghost">Create Answer</button>
-            <button id="closeConn" class="btn ghost">Close</button>
-          </div>
-
-          <div class="field">
-            <label>Local SDP (share with peer)</label>
-            <textarea id="localSDP" readonly placeholder="Local SDP will appear here after creating offer/answer"></textarea>
-            <div style="margin-top:6px">
-              <button id="copyLocal" class="btn copy">Copy to clipboard</button>
+    <div id="app">
+        <!-- Login Page -->
+        <div id="login-page" class="page active">
+            <div class="login-container">
+                <h2>P2P Admin Login</h2>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="login-btn">Login</button>
+                </form>
+                <div id="login-error" class="error-message"></div>
             </div>
-          </div>
+        </div>
 
-          <div class="field">
-            <label>Remote Offer / Answer (paste here)</label>
-            <textarea id="remoteIn" placeholder="Paste the remote SDP here and use the buttons below"></textarea>
-            <div style="margin-top:8px">
-              <button id="pasteClipboard" class="btn ghost">Paste from clipboard</button>
-              <button id="setRemoteAnswer" class="btn">Set Remote</button>
+        <!-- Connection Page -->
+        <div id="connection-page" class="page">
+            <div class="connection-container">
+                <h2>Welcome, <span id="welcome-user"></span>!</h2>
+                
+                <div class="connection-section">
+                    <h3>Create Connection</h3>
+                    <p>Share this ID with others to connect:</p>
+                    <div class="id-display" id="my-id"></div>
+                    <button id="copy-id" class="btn-secondary">Copy My ID</button>
+                </div>
+
+                <div class="connection-section">
+                    <h3>Join Connection</h3>
+                    <div class="input-group">
+                        <input type="text" id="peer-id" placeholder="Enter friend's connection ID">
+                        <button id="connect-btn" class="btn-primary">Connect</button>
+                    </div>
+                </div>
+
+                <div class="connection-status">
+                    <h4>Status: <span id="status">Disconnected</span></h4>
+                    <div id="connected-peer"></div>
+                </div>
+
+                <button id="go-to-chat" class="btn-primary" disabled>Enter Chat</button>
+                <button id="logout-from-connect" class="logout-btn">Logout</button>
             </div>
-          </div>
+        </div>
 
-          <div class="field small">
-            <strong>Quick steps</strong>
-            <ol style="padding-left:18px;margin:6px 0">
-              <li>Click <em>Create Offer</em> and share the Local SDP with your peer.</li>
-              <li>Peer pastes it into their Remote box, clicks <em>Create Answer</em>, and returns the Answer.</li>
-              <li>Paste the Answer here and click <em>Set Remote</em>. Chat connects.</li>
-            </ol>
-          </div>
+        <!-- Chat Page -->
+        <div id="chat-page" class="page">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h3>P2P Chat - Connected to: <span id="connected-to"></span></h3>
+                    <div class="user-info">
+                        <span id="current-user"></span>
+                        <button id="disconnect-btn" class="btn-warning">Disconnect</button>
+                        <button id="logout-btn" class="logout-btn">Logout</button>
+                    </div>
+                </div>
 
-          <div style="margin-top:10px" class="small">Tip: for easiest use, open this page via GitHub Pages (HTTPS) or serve locally using <code>python -m http.server</code>.</div>
-        </aside>
-      </div>
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Messages will appear here -->
+                </div>
 
-      <footer class="note">Close the tab to forget the chat. No messages are stored on the server.</footer>
+                <div class="chat-input">
+                    <input type="text" id="message-input" placeholder="Type your message...">
+                    <button id="send-btn">Send</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div id="modal" class="modal" role="dialog" aria-modal="true">
-    <div class="panel">
-      <h3>Advanced SDP</h3>
-      <p class="small">Copy the text below and send it to your peer using your preferred channel.</p>
-      <textarea id="modalText" style="width:100%;height:260px;font-family:monospace"></textarea>
-      <div style="margin-top:8px;text-align:right">
-        <button id="modalCopy" class="btn copy">Copy</button>
-        <button id="modalClose" class="btn ghost">Close</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-(async function(){
-  const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-  let dc = null;
-  const el = id => document.getElementById(id);
-  const messages = el('messages');
-  const statusDot = el('statusDot');
-  const statusText = el('statusText');
-
-  function setStatus(connected){
-    if(connected){ statusDot.style.background = 'var(--success)'; statusText.textContent = 'Connected (P2P)'; }
-    else { statusDot.style.background = 'var(--danger)'; statusText.textContent = 'Not connected'; }
-  }
-
-  function now(){
-    return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  }
-
-  function addMessage(kind, text){
-    const wrap = document.createElement('div');
-    wrap.className = 'msg ' + (kind === 'me' ? 'me' : 'peer');
-    const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.textContent = kind === 'me' ? 'You' : 'Them';
-    const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.textContent = text;
-    const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = now();
-    bubble.appendChild(meta);
-    wrap.appendChild(avatar);
-    wrap.appendChild(bubble);
-    messages.appendChild(wrap);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function addSystem(text){
-    const d = document.createElement('div'); d.style.textAlign = 'center'; d.style.fontSize='13px'; d.style.color='var(--muted)'; d.style.margin='8px 0'; d.textContent = text; messages.appendChild(d); messages.scrollTop = messages.scrollHeight;
-  }
-
-  // Datachannel handlers (for passive side)
-  pc.ondatachannel = ev => {
-    dc = ev.channel;
-    dc.onopen = () => { addSystem('DataChannel open — you can chat now'); setStatus(true); };
-    dc.onmessage = ev => { addMessage('peer', ev.data); };
-    dc.onclose = () => { addSystem('DataChannel closed'); setStatus(false); };
-  };
-
-  pc.oniceconnectionstatechange = () => {
-    if(pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') setStatus(true);
-    if(pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') setStatus(false);
-  };
-
-  pc.onicecandidate = e => {
-    if(e.candidate === null){
-      el('localSDP').value = JSON.stringify(pc.localDescription);
-    }
-  };
-
-  // UI actions
-  el('createOffer').onclick = async () => {
-    dc = pc.createDataChannel('chat');
-    dc.onopen = () => { addSystem('DataChannel open — you can chat now'); setStatus(true); };
-    dc.onmessage = ev => addMessage('peer', ev.data);
-    dc.onclose = () => { addSystem('DataChannel closed'); setStatus(false); };
-
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    // localSDP will populate after ICE gathering (onicecandidate null)
-    addSystem('Created offer — share Local SDP with your peer');
-    // show modal with local sdp after a brief wait
-    setTimeout(()=> showModal(el('localSDP').value || JSON.stringify(pc.localDescription)), 700);
-  };
-
-  el('createAnswer').onclick = async () => {
-    const txt = el('remoteIn').value.trim();
-    if(!txt){ alert('Paste remote offer into the Remote box first'); return; }
-    let offer;
-    try{ offer = JSON.parse(txt); } catch(e){ alert('Invalid SDP JSON'); return; }
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    addSystem('Answer created — share Local SDP back to initiator');
-    setTimeout(()=> showModal(el('localSDP').value || JSON.stringify(pc.localDescription)), 700);
-  };
-
-  el('setRemoteAnswer').onclick = async () => {
-    const txt = el('remoteIn').value.trim();
-    if(!txt){ alert('Paste remote answer into the Remote box first'); return; }
-    let ans;
-    try{ ans = JSON.parse(txt); } catch(e){ alert('Invalid SDP JSON'); return; }
-    await pc.setRemoteDescription(new RTCSessionDescription(ans));
-    addSystem('Remote answer set — waiting for connection');
-  };
-
-  el('copyLocal').onclick = async () => {
-    const txt = el('localSDP').value;
-    if(!txt){ alert('No SDP to copy yet'); return; }
-    await navigator.clipboard.writeText(txt);
-    addSystem('Local SDP copied to clipboard');
-  };
-
-  el('pasteClipboard').onclick = async () => {
-    try{
-      const t = await navigator.clipboard.readText();
-      el('remoteIn').value = t;
-      addSystem('Pasted clipboard into Remote box');
-    }catch(e){ alert('Clipboard read failed'); }
-  };
-
-  el('closeConn').onclick = () => { try{ dc && dc.close(); }catch(e){} try{ pc.close(); }catch(e){} location.reload(); };
-
-  // modal
-  function showModal(text){ el('modalText').value = text; el('modal').classList.add('active'); }
-  el('modalClose').onclick = () => el('modal').classList.remove('active');
-  el('modalCopy').onclick = async () => { await navigator.clipboard.writeText(el('modalText').value); addSystem('Copied to clipboard'); };
-
-  // send messages
-  el('send').onclick = () => {
-    const txt = el('msg').value.trim(); if(!txt) return;
-    if(!dc || dc.readyState !== 'open'){ alert('No active DataChannel — establish a P2P connection first'); return; }
-    dc.send(txt);
-    addMessage('me', txt);
-    el('msg').value = '';
-  };
-  el('msg').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); el('send').click(); } });
-
-  // init
-  setStatus(false);
-  addSystem('Ready. Create an offer or paste a remote offer to begin.');
-
-})();
-</script>
+    <!-- PeerJS Library -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
