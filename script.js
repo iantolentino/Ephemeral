@@ -11,6 +11,7 @@ let peer = null;
 let conn = null;
 let myPeerId = null;
 let messageHistory = [];
+let isConnecting = false;
 
 // DOM Elements
 const loginPage = document.getElementById('login-page');
@@ -18,12 +19,15 @@ const connectionPage = document.getElementById('connection-page');
 const chatPage = document.getElementById('chat-page');
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
+const errorText = document.querySelector('.error-text');
+const passwordToggle = document.getElementById('password-toggle');
 const welcomeUserSpan = document.getElementById('welcome-user');
 const myIdSpan = document.getElementById('my-id');
 const copyIdBtn = document.getElementById('copy-id');
 const peerIdInput = document.getElementById('peer-id');
 const connectBtn = document.getElementById('connect-btn');
 const statusSpan = document.getElementById('status');
+const statusDot = document.getElementById('status-dot');
 const connectedPeerSpan = document.getElementById('connected-peer');
 const goToChatBtn = document.getElementById('go-to-chat');
 const logoutFromConnectBtn = document.getElementById('logout-from-connect');
@@ -34,18 +38,25 @@ const logoutBtn = document.getElementById('logout-btn');
 const chatMessages = document.getElementById('chat-messages');
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
+const emojiBtn = document.getElementById('emoji-btn');
+const notification = document.getElementById('notification');
 
 // Initialize application
 function init() {
     loadMessageHistory();
     setupEventListeners();
     checkExistingSession();
+    setupAnimations();
 }
 
 function setupEventListeners() {
     loginForm.addEventListener('submit', handleLogin);
+    passwordToggle.addEventListener('click', togglePasswordVisibility);
     copyIdBtn.addEventListener('click', copyMyId);
     connectBtn.addEventListener('click', connectToPeer);
+    peerIdInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') connectToPeer();
+    });
     goToChatBtn.addEventListener('click', goToChat);
     logoutFromConnectBtn.addEventListener('click', handleLogout);
     disconnectBtn.addEventListener('click', disconnectFromPeer);
@@ -53,6 +64,27 @@ function setupEventListeners() {
     sendBtn.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
+    });
+    messageInput.addEventListener('input', handleMessageInput);
+    emojiBtn.addEventListener('click', toggleEmojiPicker);
+    
+    // Window event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
+}
+
+function setupAnimations() {
+    // Add intersection observer for animated elements
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animationPlayState = 'running';
+            }
+        });
+    }, { threshold: 0.1 });
+    
+    // Observe all animatable elements
+    document.querySelectorAll('.connection-card, .message').forEach(el => {
+        observer.observe(el);
     });
 }
 
@@ -63,29 +95,66 @@ function checkExistingSession() {
     }
 }
 
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
+    const loginBtn = document.querySelector('.login-btn');
+    const btnText = document.querySelector('.btn-text');
+    const btnLoader = document.querySelector('.btn-loader');
+
+    // Show loading state
+    btnText.style.opacity = '0';
+    btnLoader.style.display = 'block';
+    loginBtn.disabled = true;
+
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (VALID_USERS[username] && VALID_USERS[username] === password) {
+        showNotification('Login successful!', 'success');
+        await new Promise(resolve => setTimeout(resolve, 500));
         initializePeer(username);
     } else {
         showLoginError('Invalid username or password');
+    }
+
+    // Reset button state
+    btnText.style.opacity = '1';
+    btnLoader.style.display = 'none';
+    loginBtn.disabled = false;
+}
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const icon = passwordToggle.querySelector('i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        passwordInput.type = 'password';
+        icon.className = 'fas fa-eye';
     }
 }
 
 function initializePeer(username) {
     currentUser = username;
     
-    // Initialize PeerJS
+    // Show connecting state
+    updateStatus('connecting', 'Initializing connection...');
+
+    // Initialize PeerJS with better configuration
     peer = new Peer({
-        debug: 3,
+        debug: 2,
         config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:global.stun.twilio.com:3478' }
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
             ]
         }
     });
@@ -93,17 +162,41 @@ function initializePeer(username) {
     peer.on('open', (id) => {
         console.log('My peer ID is: ' + id);
         myPeerId = id;
+        showNotification('Connection ready!', 'success');
         showConnectionPage();
     });
 
     peer.on('connection', (connection) => {
         console.log('Incoming connection from:', connection.peer);
-        handleIncomingConnection(connection);
+        if (!conn) {
+            handleIncomingConnection(connection);
+        } else {
+            showNotification('Connection already established', 'warning');
+            connection.close();
+        }
     });
 
     peer.on('error', (err) => {
         console.error('Peer error:', err);
-        updateStatus('error', 'Connection error: ' + err.type);
+        let errorMessage = 'Connection error';
+        
+        switch (err.type) {
+            case 'network':
+                errorMessage = 'Network error. Please check your connection.';
+                break;
+            case 'peer-unavailable':
+                errorMessage = 'Peer is unavailable or ID is incorrect.';
+                break;
+            case 'socket-error':
+                errorMessage = 'Connection server error.';
+                break;
+            case 'server-error':
+                errorMessage = 'Server error. Please try again.';
+                break;
+        }
+        
+        updateStatus('error', errorMessage);
+        showNotification(errorMessage, 'error');
     });
 
     // Save to localStorage
@@ -113,55 +206,110 @@ function initializePeer(username) {
 
 function showConnectionPage() {
     welcomeUserSpan.textContent = currentUser;
-    myIdSpan.textContent = myPeerId;
-    updateStatus('disconnected', 'Disconnected');
+    myIdSpan.innerHTML = `<span class="id-text">${myPeerId}</span>`;
+    updateStatus('disconnected', 'Ready to connect');
     
-    loginPage.classList.remove('active');
-    connectionPage.classList.add('active');
-    chatPage.classList.remove('active');
+    switchPage(loginPage, connectionPage);
 }
 
 function copyMyId() {
     navigator.clipboard.writeText(myPeerId).then(() => {
-        alert('Connection ID copied to clipboard!');
+        showNotification('Connection ID copied to clipboard!', 'success');
+        // Add visual feedback
+        copyIdBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => {
+            copyIdBtn.innerHTML = '<i class="fas fa-copy"></i> Copy ID';
+        }, 2000);
+    }).catch(() => {
+        showNotification('Failed to copy ID', 'error');
     });
 }
 
 function connectToPeer() {
     const peerId = peerIdInput.value.trim();
     if (!peerId) {
-        alert('Please enter a connection ID');
+        showNotification('Please enter a connection ID', 'warning');
         return;
     }
 
-    updateStatus('connecting', 'Connecting...');
+    if (isConnecting) {
+        showNotification('Already connecting...', 'warning');
+        return;
+    }
+
+    if (conn) {
+        showNotification('Connection already established', 'warning');
+        return;
+    }
+
+    isConnecting = true;
+    updateStatus('connecting', 'Connecting to peer...');
     
+    // Add loading state to connect button
+    const originalText = connectBtn.innerHTML;
+    connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+    connectBtn.disabled = true;
+
     conn = peer.connect(peerId, {
         reliable: true,
+        serialization: 'json',
         metadata: {
-            username: currentUser
+            username: currentUser,
+            timestamp: Date.now()
         }
     });
 
     setupConnectionHandlers(conn);
+    
+    // Timeout for connection attempt
+    setTimeout(() => {
+        if (isConnecting) {
+            showNotification('Connection timeout. Please check the ID and try again.', 'error');
+            updateStatus('error', 'Connection failed');
+            resetConnectionState();
+        }
+    }, 10000);
 }
 
 function handleIncomingConnection(connection) {
+    if (conn) {
+        showNotification('Connection already exists', 'warning');
+        connection.close();
+        return;
+    }
+    
     conn = connection;
     setupConnectionHandlers(conn);
+    showNotification(`Incoming connection from ${connection.metadata.username}`, 'success');
 }
 
 function setupConnectionHandlers(connection) {
     connection.on('open', () => {
         console.log('Connected to:', connection.peer);
-        updateStatus('connected', `Connected to ${connection.metadata.username}`);
-        connectedPeerSpan.textContent = `Connected with: ${connection.metadata.username}`;
-        goToChatBtn.disabled = false;
+        isConnecting = false;
         
-        // Send our username to the peer
+        const peerUsername = connection.metadata.username || 'Unknown';
+        updateStatus('connected', `Connected to ${peerUsername}`);
+        connectedPeerSpan.innerHTML = `Connected with: <strong>${peerUsername}</strong>`;
+        
+        // Reset connect button
+        connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect';
+        connectBtn.disabled = false;
+        
+        showNotification(`Connected to ${peerUsername}!`, 'success');
+        
+        // Enable chat button with animation
+        goToChatBtn.disabled = false;
+        goToChatBtn.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            goToChatBtn.style.transform = 'scale(1)';
+        }, 150);
+        
+        // Send our user info
         connection.send({
             type: 'user_info',
-            username: currentUser
+            username: currentUser,
+            timestamp: Date.now()
         });
     });
 
@@ -172,67 +320,113 @@ function setupConnectionHandlers(connection) {
 
     connection.on('close', () => {
         console.log('Connection closed');
-        updateStatus('disconnected', 'Disconnected');
-        connectedPeerSpan.textContent = '';
+        isConnecting = false;
+        updateStatus('disconnected', 'Connection closed');
+        connectedPeerSpan.innerHTML = '';
         goToChatBtn.disabled = true;
-        addSystemMessage('Connection lost');
+        
+        if (chatPage.classList.contains('active')) {
+            addSystemMessage('Connection lost');
+            showNotification('Connection lost', 'warning');
+        }
+        
+        resetConnectionState();
     });
 
     connection.on('error', (err) => {
         console.error('Connection error:', err);
+        isConnecting = false;
         updateStatus('error', 'Connection error');
+        showNotification('Connection error occurred', 'error');
+        resetConnectionState();
     });
+}
+
+function resetConnectionState() {
+    isConnecting = false;
+    conn = null;
+    
+    // Reset connect button
+    connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect';
+    connectBtn.disabled = false;
 }
 
 function handleReceivedData(data) {
     switch (data.type) {
         case 'message':
             addMessageToHistory({
-                id: Date.now(),
+                id: data.id || Date.now(),
                 user: data.username,
                 text: data.text,
-                timestamp: new Date().toLocaleTimeString()
+                timestamp: data.timestamp || new Date().toLocaleTimeString()
             });
             displayMessages();
-            break;
             
-        case 'user_info':
-            // Store the peer's username
-            if (connectedToSpan) {
-                connectedToSpan.textContent = data.username;
+            // Show notification for new messages when not focused
+            if (document.hidden && data.username !== currentUser) {
+                showNotification(`New message from ${data.username}`, 'success');
             }
             break;
             
+        case 'user_info':
+            if (connectedToSpan) {
+                connectedToSpan.textContent = data.username;
+            }
+            // Update connected peer info
+            connectedPeerSpan.innerHTML = `Connected with: <strong>${data.username}</strong>`;
+            break;
+            
         case 'history_request':
-            // Send message history when requested
             if (conn && conn.open) {
                 conn.send({
                     type: 'history_sync',
-                    history: messageHistory
+                    history: messageHistory,
+                    syncId: Date.now()
                 });
             }
             break;
             
         case 'history_sync':
-            // Receive and merge message history
             if (data.history) {
-                messageHistory = [...new Map([...messageHistory, ...data.history].map(msg => [msg.id, msg])).values()];
-                messageHistory.sort((a, b) => a.id - b.id);
-                saveMessageHistory();
-                displayMessages();
+                // Merge histories, avoiding duplicates
+                const existingIds = new Set(messageHistory.map(msg => msg.id));
+                const newMessages = data.history.filter(msg => !existingIds.has(msg.id));
+                
+                if (newMessages.length > 0) {
+                    messageHistory.push(...newMessages);
+                    messageHistory.sort((a, b) => a.id - b.id);
+                    saveMessageHistory();
+                    displayMessages();
+                    showNotification(`Synced ${newMessages.length} messages`, 'success');
+                }
             }
+            break;
+            
+        case 'typing_start':
+            showTypingIndicator(data.username);
+            break;
+            
+        case 'typing_stop':
+            hideTypingIndicator();
             break;
     }
 }
 
 function updateStatus(status, message) {
     statusSpan.textContent = message;
-    statusSpan.className = status;
+    statusDot.className = 'status-dot ' + status;
+    
+    // Add pulse animation for connecting
+    if (status === 'connecting') {
+        statusDot.style.animation = 'pulse 2s infinite';
+    } else {
+        statusDot.style.animation = 'none';
+    }
 }
 
 function goToChat() {
     if (!conn || !conn.open) {
-        alert('Not connected to any peer');
+        showNotification('Not connected to any peer', 'error');
         return;
     }
 
@@ -241,15 +435,17 @@ function goToChat() {
         type: 'history_request'
     });
 
-    currentUserSpan.textContent = `Logged in as: ${currentUser}`;
+    currentUserSpan.textContent = currentUser;
     
-    connectionPage.classList.remove('active');
-    chatPage.classList.add('active');
+    switchPage(connectionPage, chatPage);
+    
+    // Add welcome message if no messages exist
+    if (messageHistory.length === 0) {
+        addSystemMessage(`Secure P2P connection established! Start chatting with ${connectedToSpan.textContent}`);
+    }
     
     displayMessages();
-    
-    // Add connection message
-    addSystemMessage(`Connected to peer! Start chatting now.`);
+    messageInput.focus();
 }
 
 function disconnectFromPeer() {
@@ -258,10 +454,9 @@ function disconnectFromPeer() {
         conn = null;
     }
     
-    chatPage.classList.remove('active');
-    connectionPage.classList.add('active');
-    
+    switchPage(chatPage, connectionPage);
     addSystemMessage('Disconnected from peer');
+    showNotification('Disconnected from peer', 'warning');
 }
 
 function handleLogout() {
@@ -276,30 +471,83 @@ function handleLogout() {
     myPeerId = null;
     conn = null;
     peer = null;
+    isConnecting = false;
     
     localStorage.removeItem('currentUser');
     
-    chatPage.classList.remove('active');
-    connectionPage.classList.remove('active');
-    loginPage.classList.add('active');
+    switchPage(chatPage, loginPage);
+    switchPage(connectionPage, loginPage);
     
     // Clear inputs
     loginForm.reset();
     peerIdInput.value = '';
+    messageInput.value = '';
+    
+    showNotification('Logged out successfully', 'success');
+}
+
+function handleMessageInput() {
+    if (!conn || !conn.open) return;
+    
+    // Send typing indicators (throttled)
+    if (messageInput.value.length > 0) {
+        conn.send({
+            type: 'typing_start',
+            username: currentUser
+        });
+    } else {
+        conn.send({
+            type: 'typing_stop'
+        });
+    }
+}
+
+let typingTimeout;
+function showTypingIndicator(username) {
+    clearTimeout(typingTimeout);
+    
+    let typingIndicator = document.getElementById('typing-indicator');
+    if (!typingIndicator) {
+        typingIndicator = document.createElement('div');
+        typingIndicator.id = 'typing-indicator';
+        typingIndicator.className = 'message system typing';
+        typingIndicator.innerHTML = `
+            <div class="typing-content">
+                <span>${username} is typing</span>
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingIndicator);
+    }
+    
+    scrollToBottom();
+    
+    typingTimeout = setTimeout(hideTypingIndicator, 3000);
+}
+
+function hideTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
 }
 
 function sendMessage() {
     const message = messageInput.value.trim();
     if (!message || !conn || !conn.open) {
         if (!conn || !conn.open) {
-            alert('Not connected to any peer');
+            showNotification('Not connected to any peer', 'error');
             return;
         }
         return;
     }
 
     const messageData = {
-        id: Date.now(),
+        id: Date.now() + Math.random(), // Ensure unique ID
         user: currentUser,
         text: message,
         timestamp: new Date().toLocaleTimeString()
@@ -314,11 +562,18 @@ function sendMessage() {
         type: 'message',
         username: currentUser,
         text: message,
-        timestamp: messageData.timestamp
+        timestamp: messageData.timestamp,
+        id: messageData.id
     });
 
-    // Clear input
+    // Stop typing indicator
+    conn.send({
+        type: 'typing_stop'
+    });
+
+    // Clear input and refocus
     messageInput.value = '';
+    messageInput.focus();
     
     // Auto-scroll to bottom
     scrollToBottom();
@@ -326,9 +581,12 @@ function sendMessage() {
 
 function addMessageToHistory(message) {
     messageHistory.push(message);
-    if (messageHistory.length > 1000) {
-        messageHistory = messageHistory.slice(-500); // Keep last 500 messages
+    
+    // Keep only last 200 messages to prevent storage issues
+    if (messageHistory.length > 200) {
+        messageHistory = messageHistory.slice(-150);
     }
+    
     saveMessageHistory();
 }
 
@@ -348,26 +606,40 @@ function addSystemMessage(text) {
 function displayMessages() {
     if (!chatMessages) return;
     
+    // Remove welcome message if there are actual messages
+    const welcomeMessage = chatMessages.querySelector('.welcome-message');
+    if (welcomeMessage && messageHistory.length > 0) {
+        welcomeMessage.style.display = 'none';
+    }
+    
+    // Filter out system messages if there are user messages
+    const userMessages = messageHistory.filter(msg => !msg.isSystem);
+    let messagesToShow = messageHistory;
+    
+    if (userMessages.length > 0) {
+        // Only show system messages from the last session
+        const lastUserMessageTime = Math.max(...userMessages.map(msg => msg.id));
+        messagesToShow = messageHistory.filter(msg => 
+            !msg.isSystem || msg.id > lastUserMessageTime - 300000 // 5 minutes
+        );
+    }
+    
     chatMessages.innerHTML = '';
     
-    messageHistory.forEach(msg => {
+    messagesToShow.forEach(msg => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${msg.isSystem ? 'system' : msg.user === currentUser ? 'own' : 'other'}`;
         
         if (msg.isSystem) {
-            messageDiv.style.cssText = `
-                background: #ffeb3b;
-                color: #333;
-                text-align: center;
-                max-width: 100%;
-                font-style: italic;
-                margin: 0.5rem 0;
+            messageDiv.innerHTML = `
+                <div class="message-text">${msg.text}</div>
+                <div class="message-time">${msg.timestamp}</div>
             `;
-            messageDiv.innerHTML = `<em>${msg.text} - ${msg.timestamp}</em>`;
         } else {
             messageDiv.innerHTML = `
-                <div class="message-header">${msg.user} - ${msg.timestamp}</div>
+                <div class="message-header">${msg.user}</div>
                 <div class="message-text">${msg.text}</div>
+                <div class="message-time">${msg.timestamp}</div>
             `;
         }
         
@@ -384,24 +656,147 @@ function scrollToBottom() {
 }
 
 function saveMessageHistory() {
-    localStorage.setItem('p2pChatMessages', JSON.stringify(messageHistory));
-}
-
-function loadMessageHistory() {
-    const saved = localStorage.getItem('p2pChatMessages');
-    if (saved) {
-        messageHistory = JSON.parse(saved);
+    try {
+        localStorage.setItem('p2pChatMessages', JSON.stringify(messageHistory));
+    } catch (e) {
+        console.warn('Could not save message history:', e);
+        // Clear old messages if storage is full
+        if (e.name === 'QuotaExceededError') {
+            messageHistory = messageHistory.slice(-50);
+            localStorage.setItem('p2pChatMessages', JSON.stringify(messageHistory));
+        }
     }
 }
 
+function loadMessageHistory() {
+    try {
+        const saved = localStorage.getItem('p2pChatMessages');
+        if (saved) {
+            messageHistory = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.warn('Could not load message history:', e);
+        messageHistory = [];
+    }
+}
+
+function switchPage(fromPage, toPage) {
+    fromPage.classList.remove('active');
+    toPage.classList.add('active');
+    
+    // Add page transition animation
+    toPage.style.animation = 'slideUp 0.6s ease-out';
+}
+
+function showNotification(message, type = 'info') {
+    const notificationIcon = notification.querySelector('.notification-icon');
+    const notificationText = notification.querySelector('.notification-text');
+    
+    // Set notification content
+    notificationText.textContent = message;
+    notification.className = `notification ${type} show`;
+    
+    // Set icon based on type
+    switch (type) {
+        case 'success':
+            notificationIcon.className = 'notification-icon fas fa-check-circle';
+            break;
+        case 'error':
+            notificationIcon.className = 'notification-icon fas fa-exclamation-circle';
+            break;
+        case 'warning':
+            notificationIcon.className = 'notification-icon fas fa-exclamation-triangle';
+            break;
+        default:
+            notificationIcon.className = 'notification-icon fas fa-info-circle';
+    }
+    
+    // Auto hide after 4 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 4000);
+}
+
 function showLoginError(message) {
-    loginError.textContent = message;
-    loginError.style.display = 'block';
+    errorText.textContent = message;
+    loginError.classList.add('show');
 }
 
 function hideLoginError() {
-    loginError.style.display = 'none';
+    loginError.classList.remove('show');
 }
 
-// Initialize the application
+function toggleEmojiPicker() {
+    showNotification('Emoji picker coming soon!', 'info');
+    // In a real implementation, you'd integrate an emoji picker library here
+}
+
+function handleBeforeUnload(e) {
+    if (conn && conn.open) {
+        e.preventDefault();
+        e.returnValue = 'You have an active connection. Are you sure you want to leave?';
+        return e.returnValue;
+    }
+}
+
+// Add CSS for new elements
+const additionalStyles = `
+    .typing {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    }
+    
+    .typing-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-style: italic;
+    }
+    
+    .typing-dots {
+        display: flex;
+        gap: 3px;
+    }
+    
+    .typing-dots span {
+        width: 6px;
+        height: 6px;
+        background: var(--primary);
+        border-radius: 50%;
+        animation: typingBounce 1.4s infinite ease-in-out;
+    }
+    
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes typingBounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        opacity: 0.6;
+        margin-top: 4px;
+        text-align: right;
+    }
+    
+    .message.system .message-time {
+        text-align: center;
+    }
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+
+// Initialize the application when the page loads
 document.addEventListener('DOMContentLoaded', init);
+
+// Service Worker registration for PWA capabilities (optional)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
+    });
+}
