@@ -49,6 +49,19 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
+
+                    <!-- Ephemeral Mode Toggle -->
+                    <div class="toggle-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="ephemeral-mode" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Ephemeral Mode (Auto-delete on logout)</span>
+                        </label>
+                        <div class="toggle-description">
+                            <i class="fas fa-info-circle"></i>
+                            When enabled, all messages are automatically deleted when you logout
+                        </div>
+                    </div>
                     
                     <button type="submit" class="login-btn">
                         <span class="btn-text">Sign In</span>
@@ -63,7 +76,7 @@
                     <span class="error-text"></span>
                 </div>
 
-                <!-- <div class="demo-accounts">
+                <div class="demo-accounts">
                     <h4>Demo Accounts</h4>
                     <div class="account-cards">
                         <div class="account-card">
@@ -74,8 +87,12 @@
                             <span class="account-user">admin2</span>
                             <span class="account-pass">root2</span>
                         </div>
+                        <div class="account-card">
+                            <span class="account-user">admin</span>
+                            <span class="account-pass">root</span>
+                        </div>
                     </div>
-                </div> -->
+                </div>
             </div>
         </div>
 
@@ -92,9 +109,15 @@
                             <p>Ready to connect securely</p>
                         </div>
                     </div>
-                    <button id="logout-from-connect" class="icon-btn" title="Logout">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
+                    <div class="header-actions">
+                        <div class="ephemeral-badge" id="ephemeral-badge">
+                            <i class="fas fa-trash"></i>
+                            Ephemeral Mode
+                        </div>
+                        <button id="logout-from-connect" class="icon-btn" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="connection-cards">
@@ -160,9 +183,9 @@
                             <div class="online-dot"></div>
                             <span>Connected to: <strong id="connected-to">Unknown</strong></span>
                         </div>
-                        <div class="user-badge">
-                            <i class="fas fa-user"></i>
-                            <span id="current-user">Admin</span>
+                        <div class="ephemeral-indicator" id="ephemeral-indicator">
+                            <i class="fas fa-trash"></i>
+                            Ephemeral
                         </div>
                     </div>
                     <div class="chat-actions">
@@ -183,6 +206,10 @@
                             </div>
                             <h3>Secure P2P Chat Started</h3>
                             <p>Your messages are encrypted end-to-end</p>
+                            <div class="ephemeral-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Ephemeral Mode: Messages will be deleted on logout</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -202,7 +229,30 @@
                             <i class="fas fa-lock"></i>
                             End-to-end encrypted
                         </span>
+                        <span class="ephemeral-notice" id="ephemeral-notice">
+                            <i class="fas fa-trash"></i>
+                            Ephemeral mode
+                        </span>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmation-modal" class="modal">
+            <div class="modal-content glassmorphism">
+                <div class="modal-header">
+                    <h3 id="modal-title">Confirmation</h3>
+                    <button class="modal-close" id="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="modal-message">Are you sure you want to proceed?</p>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="modal-cancel">Cancel</button>
+                    <button class="btn-primary" id="modal-confirm">Confirm</button>
                 </div>
             </div>
         </div>
@@ -221,4 +271,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
